@@ -234,8 +234,8 @@ const RT_RATE_LIMIT = {
 ## Implementation Phases
 
 ### Phase 1: Foundation
-- [ ] Set up Next.js project with Chakra UI v3
-- [ ] Configure Supabase database and authentication
+- [x] Set up Next.js project with Chakra UI v3
+- [ ] Configure Supabase database and authentication (need to add API keys to .env.local)
 - [ ] Create basic database schema
 - [ ] Implement movie grid and basic filtering
 - [ ] Set up CI/CD pipeline
