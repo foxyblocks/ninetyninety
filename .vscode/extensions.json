@@ -1,0 +1,15 @@
+{
+	"recommendations": [
+		"biomejs.biome",
+		"ms-playwright.playwright",
+		"supabase.supabase",
+		"oven.bun-vscode",
+		"ms-vscode.vscode-typescript-next",
+		"chakra-ui.chakra-ui-snippets"
+	],
+	"unwantedRecommendations": [
+		"esbenp.prettier-vscode",
+		"dbaeumer.vscode-eslint",
+		"bradlc.vscode-tailwindcss"
+	]
+}
