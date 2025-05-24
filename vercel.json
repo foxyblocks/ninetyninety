@@ -2,4 +2,6 @@
 	"framework": "nextjs",
 	"buildCommand": "bun run build",
 	"outputDirectory": ".next"
+	// To disable Vercel's automatic GitHub deployments, uncomment:
+	// "github": { "enabled": false }
 }

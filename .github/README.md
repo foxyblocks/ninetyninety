@@ -1,10 +1,10 @@
 # GitHub Actions CI/CD Setup
 
-This repository uses GitHub Actions for continuous integration and deployment.
+This repository uses GitHub Actions for continuous integration.
 
 ## Workflows
 
-### 1. CI Workflow (`ci.yml`)
+### CI Workflow (`ci.yml`)
 Runs on every push to `main` and on all pull requests.
 
 **Jobs:**
@@ -14,11 +14,39 @@ Runs on every push to `main` and on all pull requests.
 - **E2E Tests**: Runs Playwright E2E tests
 - **TypeScript Check**: Validates TypeScript types
 
-### 2. Deploy Workflow (`deploy.yml`)
-Automatically deploys to Vercel when CI passes on the `main` branch.
+## Vercel Deployment Options
 
-### 3. Dependabot (`dependabot.yml`)
-Automatically creates PRs for dependency updates weekly.
+Vercel automatically deploys your project by default. You have two options:
+
+### Option 1: Vercel Auto-Deploy with Protection (Recommended)
+1. Let Vercel handle all deployments automatically
+2. Go to Vercel Project Settings → Git → Deployment Protection
+3. Enable "Only deploy when all checks have passed"
+4. Select which GitHub checks must pass (e.g., "CI / Build", "CI / Unit Tests")
+
+**Benefits:**
+- Simple setup
+- Vercel handles everything
+- Preview deployments for all branches
+- Production deployments only when CI passes
+
+### Option 2: Disable Auto-Deploy (Full CI Control)
+If you want GitHub Actions to control deployments:
+
+1. Add to `vercel.json`:
+   ```json
+   {
+     "github": {
+       "enabled": false
+     }
+   }
+   ```
+2. Create a custom deployment workflow
+
+**Benefits:**
+- Full control over when deployments happen
+- Can add custom deployment logic
+- More complex but more flexible
 
 ## How Playwright E2E Tests Work in CI
 

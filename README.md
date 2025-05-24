@@ -1,7 +1,6 @@
 # NinetyNinety - Elite Movie Discovery Platform
 
 ![CI](https://github.com/YOUR_USERNAME/ninetyninety/workflows/CI/badge.svg)
-![Deploy](https://github.com/YOUR_USERNAME/ninetyninety/workflows/Deploy%20to%20Vercel/badge.svg)
 
 A curated movie discovery platform showcasing only the absolute best films - those with both 90%+ critics score AND 90%+ audience score on Rotten Tomatoes.
 
