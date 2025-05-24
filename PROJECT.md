@@ -235,12 +235,11 @@ const RT_RATE_LIMIT = {
 
 ### Phase 1: Foundation
 - [x] Set up Next.js project with Chakra UI v3
-- [ ] Setup up vercel for deployment
-- [ ] Setup up github actions for CI/CD
+- [x] Setup up vercel for deployment
+- [x] Setup up github actions for CI/CD
 - [ ] Configure Supabase database and authentication (need to add API keys to .env.local)
 - [ ] Create basic database schema
 - [ ] Implement movie grid and basic filtering
-- [ ] Set up CI/CD pipeline
 
 ### Phase 2: Data Pipeline
 - [ ] Implement TMDB data fetching

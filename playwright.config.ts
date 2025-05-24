@@ -66,11 +66,13 @@ export default defineConfig({
 
 	/* Run your local dev server before starting the tests */
 	webServer: {
-		command: `bun dev --port ${PORT}`,
-		url: BASE_URL,
+		command: process.env.CI
+			? `PORT=${PORT} bun run start` // Production server in CI
+			: `bun dev --port ${PORT}`, // Dev server locally
+		port: PORT as number,
 		reuseExistingServer: !process.env.CI,
 		stdout: "pipe",
 		stderr: "pipe",
-		timeout: 30000,
+		timeout: process.env.CI ? 120 * 1000 : 30 * 1000, // Longer timeout in CI
 	},
 });
