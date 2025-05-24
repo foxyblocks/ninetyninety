@@ -72,16 +72,33 @@ The E2E tests use Playwright's built-in `webServer` configuration to automatical
 
 Configure these secrets in your GitHub repository settings:
 
-### Application Secrets
+### Application Secrets (Optional)
+These are optional - the CI will use placeholder values if not set:
 - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
 - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (keep secret!)
 - `TMDB_API_KEY`: Your TMDB API key for movie data
 
-### Deployment Secrets
-- `VERCEL_TOKEN`: Your Vercel API token for deployments
-- `VERCEL_ORG_ID`: Your Vercel organization ID
-- `VERCEL_PROJECT_ID`: Your Vercel project ID
+## How Environment Variables Work in CI
+
+GitHub Actions automatically exposes secrets as environment variables. We don't need to create `.env.local` files because:
+
+1. **GitHub Secrets → Environment Variables**: When you use `${{ secrets.SECRET_NAME }}`, it becomes available as an environment variable
+2. **Direct Usage**: Next.js can read these directly from the environment during build and runtime
+3. **Fallback Values**: We use `|| 'placeholder'` syntax to provide defaults when secrets aren't configured yet
+
+Example in our CI:
+```yaml
+- name: Build application
+  run: bun run build
+  env:
+    NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+```
+
+This approach is:
+- **Cleaner**: No temporary files to manage
+- **More Secure**: Secrets stay in environment variables
+- **Standard Practice**: Following GitHub Actions conventions
 
 ## Setting Up Secrets
 
@@ -90,23 +107,14 @@ Configure these secrets in your GitHub repository settings:
 3. Click "New repository secret"
 4. Add each secret listed above
 
-## Getting Vercel Tokens
+Note: All secrets are optional. The CI will run with placeholder values if secrets aren't configured yet.
 
-1. **Vercel Token**: 
-   - Go to [Vercel Dashboard](https://vercel.com/account/tokens)
-   - Create a new token with full access
+## Workflow Status Badge
 
-2. **Vercel Org/Project IDs**:
-   - Run `vercel link` in your project directory
-   - Check `.vercel/project.json` for the IDs
-
-## Workflow Status Badges
-
-Add these to your main README.md:
+Add this to your main README.md:
 
 ```markdown
 ![CI](https://github.com/YOUR_USERNAME/ninetyninety/workflows/CI/badge.svg)
-![Deploy](https://github.com/YOUR_USERNAME/ninetyninety/workflows/Deploy%20to%20Vercel/badge.svg)
 ```
 
 ## Local Testing
