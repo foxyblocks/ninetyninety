@@ -1,14 +1,14 @@
 {
-	"recommendations": [
-		"biomejs.biome",
-		"ms-playwright.playwright",
-		"supabase.supabase",
-		"oven.bun-vscode",
-		"chakra-ui.chakra-ui-snippets"
-	],
-	"unwantedRecommendations": [
-		"esbenp.prettier-vscode",
-		"dbaeumer.vscode-eslint",
-		"bradlc.vscode-tailwindcss"
-	]
+  "recommendations": [
+    "biomejs.biome",
+    "ms-playwright.playwright",
+    "supabase.supabase",
+    "oven.bun-vscode",
+    "chakra-ui.chakra-ui-snippets"
+  ],
+  "unwantedRecommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss"
+  ]
 }
