@@ -4,7 +4,6 @@
 		"ms-playwright.playwright",
 		"supabase.supabase",
 		"oven.bun-vscode",
-		"ms-vscode.vscode-typescript-next",
 		"chakra-ui.chakra-ui-snippets"
 	],
 	"unwantedRecommendations": [

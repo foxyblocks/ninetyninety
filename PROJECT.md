@@ -235,6 +235,8 @@ const RT_RATE_LIMIT = {
 
 ### Phase 1: Foundation
 - [x] Set up Next.js project with Chakra UI v3
+- [ ] Setup up vercel for deployment
+- [ ] Setup up github actions for CI/CD
 - [ ] Configure Supabase database and authentication (need to add API keys to .env.local)
 - [ ] Create basic database schema
 - [ ] Implement movie grid and basic filtering
@@ -260,17 +262,6 @@ const RT_RATE_LIMIT = {
 - [ ] SEO optimization
 - [ ] Error handling and edge cases
 - [ ] Production deployment and monitoring
-
-## Success Metrics
-
-### Technical Metrics
-- **Performance**: Page load times < 2 seconds
-- **Uptime**: 99.9% availability
-- **Data Accuracy**: <1% incorrect movie ratings
-
-### User Experience Metrics
-- **Discovery Success**: Users find movies they want to watch
-- **Engagement**: Time spent browsing and returning visits
 
 ## Risk Mitigation
 
