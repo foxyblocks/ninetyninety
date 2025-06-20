@@ -49,9 +49,6 @@ A curated movie discovery platform showcasing only the absolute best films - tho
   - **`e2e/`** - Playwright end-to-end tests
   - **`unit/`** - Bun unit tests
 
-- **`docs/`** - Project documentation
-  - **`ARCHITECTURE.md`** - Technical decisions and patterns
-
 - **`public/`** - Static assets and icons
 
 ## 📋 Prerequisites
