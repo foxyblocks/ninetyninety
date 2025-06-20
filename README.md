@@ -16,90 +16,6 @@ A curated movie discovery platform showcasing only the absolute best films - tho
 
 ## 🗂️ Project Architecture
 
-```mermaid
-graph TD
-    A[ninetyninety/] --> B[src/]
-    A --> C[database/]
-    A --> D[scripts/]
-    A --> E[tests/]
-    A --> F[docs/]
-    A --> G[public/]
-    A --> H[Config Files]
-    
-    %% src directory
-    B --> B1[app/]
-    B --> B2[components/]
-    B --> B3[lib/]
-    B --> B4[types/]
-    
-    %% app directory
-    B1 --> B1A[api/]
-    B1 --> B1B[movies/]
-    B1 --> B1C[page.tsx]
-    B1 --> B1D[layout.tsx]
-    B1 --> B1E[loading.tsx]
-    
-    %% components directory
-    B2 --> B2A[MovieGrid.tsx]
-    B2 --> B2B[ui/]
-    
-    %% lib directory
-    B3 --> B3A[database.ts]
-    B3 --> B3B[supabase.ts]
-    B3 --> B3C[config.ts]
-    
-    %% types directory
-    B4 --> B4A[database.ts]
-    
-    %% database directory
-    C --> C1[schema.sql]
-    C --> C2[README.md]
-    
-    %% scripts directory
-    D --> D1[setup-database.ts]
-    D --> D2[seed-database.ts]
-    D --> D3[check-database.ts]
-    
-    %% tests directory
-    E --> E1[e2e/]
-    E --> E2[unit/]
-    
-    %% docs directory
-    F --> F1[ARCHITECTURE.md]
-    
-    %% public directory
-    G --> G1[Static Assets]
-    
-    %% Config files
-    H --> H1[package.json]
-    H --> H2[tsconfig.json]
-    H --> H3[biome.json]
-    H --> H4[PROJECT.md]
-    H --> H5[README.md]
-    
-    %% Click handlers for main directories
-    click A "https://github.com/foxyblocks/ninetyninety" "Project Root"
-    click B "https://github.com/foxyblocks/ninetyninety/tree/main/src" "Source Code"
-    click C "https://github.com/foxyblocks/ninetyninety/tree/main/database" "Database Schema"
-    click D "https://github.com/foxyblocks/ninetyninety/tree/main/scripts" "Automation Scripts"
-    click E "https://github.com/foxyblocks/ninetyninety/tree/main/tests" "Test Suite"
-    click F "https://github.com/foxyblocks/ninetyninety/tree/main/docs" "Documentation"
-    
-    %% Styling
-    classDef rootStyle fill:#e1f5fe,stroke:#01579b,stroke-width:3px
-    classDef srcStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef dbStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    classDef scriptStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef testStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-    classDef configStyle fill:#f5f5f5,stroke:#424242,stroke-width:2px
-    
-    class A rootStyle
-    class B,B1,B2,B3,B4 srcStyle
-    class C,C1,C2 dbStyle
-    class D,D1,D2,D3 scriptStyle
-    class E,E1,E2 testStyle
-    class H,H1,H2,H3,H4,H5 configStyle
-```
 
 ### Directory Descriptions
 
@@ -186,28 +102,6 @@ graph TD
 - `bun test:e2e:ui` - Run E2E tests with UI
 - `bun test:e2e:debug` - Debug E2E tests
 
-## 🏗️ Project Structure
-
-```
-ninetyninety/
-├── src/
-│   ├── app/              # Next.js App Router pages
-│   │   ├── api/          # API routes
-│   │   ├── movies/       # Movie-related pages
-│   │   ├── layout.tsx    # Root layout with Chakra UI
-│   │   └── page.tsx      # Home page
-│   ├── components/       # React components
-│   ├── lib/              # Utility functions and configurations
-│   └── types/            # TypeScript type definitions
-├── tests/
-│   ├── unit/             # Unit tests
-│   └── e2e/              # End-to-end tests
-├── public/               # Static assets
-├── PROJECT.md            # Detailed project documentation
-├── CLAUDE.md             # AI assistant guidelines
-└── biome.json            # Biome configuration
-```
-
 ## 🧪 Testing
 
 Run unit tests:
@@ -235,12 +129,8 @@ PORT=3002 bun test:e2e
 ## 📚 Documentation
 
 - [PROJECT.md](./PROJECT.md) - Detailed project specifications
-- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) - Database architecture and design decisions
 - [database/README.md](./database/README.md) - Database setup and patterns
 
-## 🤝 Contributing
-
-Please read the project documentation before contributing. Ensure all code follows our linting and formatting standards by running `bun check` before committing.
 
 ## 📄 License
 
