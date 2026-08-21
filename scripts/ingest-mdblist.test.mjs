@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import {
   extractListItems,
   extractMovieRef,
+  loadAllListItems,
   normalizeMdblistMovie,
   qualifies,
 } from "./ingest-mdblist.mjs"
@@ -52,5 +53,36 @@ describe("MDBList normalization", () => {
     expect(extractListItems({ items: [{ id: 238, mediatype: "movie" }] })).toHaveLength(1)
     expect(extractMovieRef({ ids: { tmdb: 238 }, type: "movie" })).toEqual({ tmdbId: "238" })
     expect(extractMovieRef({ ids: { tmdb: 1399 }, type: "show" })).toBeNull()
+  })
+
+  test("accepts the flat tmdbid field returned by detail responses", () => {
+    expect(normalizeMdblistMovie({ ...godfather, ids: undefined, tmdbid: 238 })?.id).toBe(
+      "tmdb:238"
+    )
+  })
+
+  test("loads every list page before reconciliation", async () => {
+    const offsets = []
+    const pages = [
+      {
+        items: Array.from({ length: 100 }, (_, index) => ({ id: index + 1 })),
+        hasMore: "true",
+      },
+      { items: [{ id: 101 }], hasMore: "false" },
+    ]
+    const items = await loadAllListItems(
+      "https://api.mdblist.com/lists/example/the-90-90/items",
+      "test-key",
+      async (url) => {
+        offsets.push(Number(url.searchParams.get("offset")))
+        const page = pages.shift()
+        return new Response(JSON.stringify({ items: page.items }), {
+          headers: { "X-Has-More": page.hasMore },
+        })
+      }
+    )
+
+    expect(offsets).toEqual([0, 100])
+    expect(items).toHaveLength(101)
   })
 })
