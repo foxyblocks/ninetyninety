@@ -11,7 +11,10 @@ const godfather = {
   year: 1972,
   runtime: 175,
   ids: { tmdb: 238 },
-  genres: [{ id: 4, title: "Crime" }, { id: 6, title: "Drama" }],
+  genres: [
+    { id: 4, title: "Crime" },
+    { id: 6, title: "Drama" },
+  ],
   description: "The aging patriarch transfers control to his reluctant son.",
   ratings: [
     { source: "tomatoes", value: 97, votes: 153, url: "/m/the_godfather" },
