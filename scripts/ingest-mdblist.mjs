@@ -271,13 +271,16 @@ async function publishMovies(movies) {
     throw new Error("NINETY_NINETY_INGEST_URL must use HTTPS on a chatgpt.site host")
   }
 
+  const headers = {
+    authorization: `Bearer ${requiredEnv("NINETY_NINETY_INGEST_SECRET")}`,
+    "content-type": "application/json",
+  }
+  const sitesToken = process.env.NINETY_NINETY_SITES_TOKEN?.trim()
+  if (sitesToken) headers["OAI-Sites-Authorization"] = `Bearer ${sitesToken}`
+
   const response = await fetchJson(ingestUrl, {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${requiredEnv("NINETY_NINETY_INGEST_SECRET")}`,
-      "content-type": "application/json",
-      "OAI-Sites-Authorization": `Bearer ${requiredEnv("NINETY_NINETY_SITES_TOKEN")}`,
-    },
+    headers,
     body: JSON.stringify({ mode: "full", source: "mdblist", movies }),
   })
   return response
