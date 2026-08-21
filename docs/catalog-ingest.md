@@ -36,8 +36,9 @@ Create these Actions variables:
 | Variable | Value |
 | --- | --- |
 | `MDBLIST_LIST_URL` | The MDBList API items URL above. |
-| `NINETY_NINETY_INGEST_URL` | `https://the-90-90.chris186688.chatgpt.site/api/ingest` |
-| `NINETY_NINETY_MIN_MOVIES` | Optional safety floor; defaults to `25`. |
+
+The Site ingest URL and the 25-movie safety floor are committed in the workflow because they are
+non-secret application configuration.
 
 The same `NINETY_NINETY_INGEST_SECRET` value must be stored as the Site's secret runtime variable
 `INGEST_SECRET`.
