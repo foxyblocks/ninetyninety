@@ -3,6 +3,8 @@ import { pathToFileURL } from "node:url"
 const MDBLIST_API_HOST = "api.mdblist.com"
 const RT_HOST = "www.rottentomatoes.com"
 const MAX_MOVIES = 2000
+const MDBLIST_PAGE_SIZE = 100
+const MAX_LIST_PAGES = 25
 
 function asRecord(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : null
@@ -43,7 +45,7 @@ function getIds(movie) {
 
 function getTmdbId(movie) {
   const ids = getIds(movie)
-  const id = firstNumber(ids.tmdb, movie.tmdb_id, movie.tmdb)
+  const id = firstNumber(ids.tmdb, movie.tmdbid, movie.tmdb_id, movie.tmdb)
   return id !== null && Number.isInteger(id) && id > 0 ? String(id) : null
 }
 
@@ -185,7 +187,7 @@ function mdblistUrl(rawUrl, apiKey) {
   return url
 }
 
-async function fetchJson(url, options = {}) {
+async function fetchResponse(url, options = {}) {
   const attempts = 4
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     let response
@@ -205,7 +207,7 @@ async function fetchJson(url, options = {}) {
       continue
     }
 
-    if (response.ok) return response.json()
+    if (response.ok) return response
     const retryable = response.status === 429 || response.status >= 500
     if (!retryable || attempt === attempts) {
       throw new Error(`Request failed (${response.status}) for ${new URL(url).hostname}`)
@@ -213,6 +215,42 @@ async function fetchJson(url, options = {}) {
     await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)))
   }
   throw new Error("Request failed after retries")
+}
+
+async function fetchJson(url, options = {}) {
+  return (await fetchResponse(url, options)).json()
+}
+
+export async function loadAllListItems(listUrl, apiKey, fetchPage = fetchResponse) {
+  const allItems = []
+  let offset = 0
+
+  for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
+    const pageUrl = mdblistUrl(listUrl, apiKey)
+    pageUrl.searchParams.set("limit", String(MDBLIST_PAGE_SIZE))
+    pageUrl.searchParams.set("offset", String(offset))
+
+    const response = await fetchPage(pageUrl)
+    const items = extractListItems(await response.json())
+    const hasMoreHeader = response.headers.get("x-has-more")?.toLowerCase()
+    if (page === 0 && items.length === 0) {
+      throw new Error("MDBList returned an empty or unrecognized list response")
+    }
+    if (items.length === 0) {
+      if (hasMoreHeader === "true") {
+        throw new Error("MDBList reported another page but returned no items")
+      }
+      return allItems
+    }
+
+    allItems.push(...items)
+    offset += items.length
+
+    if (hasMoreHeader === "false") return allItems
+    if (hasMoreHeader !== "true" && items.length < MDBLIST_PAGE_SIZE) return allItems
+  }
+
+  throw new Error(`MDBList list exceeded the ${MAX_LIST_PAGES}-page safety limit`)
 }
 
 async function mapWithConcurrency(values, concurrency, mapper) {
@@ -230,9 +268,7 @@ async function mapWithConcurrency(values, concurrency, mapper) {
 }
 
 async function loadQualifiedMovies(listUrl, apiKey) {
-  const payload = await fetchJson(mdblistUrl(listUrl, apiKey))
-  const items = extractListItems(payload)
-  if (items.length === 0) throw new Error("MDBList returned an empty or unrecognized list response")
+  const items = await loadAllListItems(listUrl, apiKey)
 
   const direct = []
   const refs = []
