@@ -155,8 +155,7 @@ export function extractMovieRef(value) {
   if (mediaType && !["movie", "movies"].includes(mediaType)) return null
   const rawId = firstNumber(item.id)
   const tmdbId =
-    getTmdbId(item) ??
-    (rawId !== null && Number.isInteger(rawId) ? String(rawId) : null)
+    getTmdbId(item) ?? (rawId !== null && Number.isInteger(rawId) ? String(rawId) : null)
   return tmdbId && /^\d+$/.test(tmdbId) ? { tmdbId } : null
 }
 
@@ -295,12 +294,12 @@ export async function main() {
   const movies = await loadQualifiedMovies(listUrl, apiKey)
   if (movies.length < minimum) {
     throw new Error(
-      `Guardrail stopped publish: only ${movies.length} qualified movies (minimum ${minimum})`,
+      `Guardrail stopped publish: only ${movies.length} qualified movies (minimum ${minimum})`
     )
   }
   if (movies.length > MAX_MOVIES) {
     throw new Error(
-      `Guardrail stopped publish: ${movies.length} movies exceeds the API batch limit`,
+      `Guardrail stopped publish: ${movies.length} movies exceeds the API batch limit`
     )
   }
 
