@@ -29,7 +29,6 @@ Create these Actions secrets:
 | --- | --- |
 | `MDBLIST_API_KEY` | Reads the saved MDBList list and current ratings. |
 | `NINETY_NINETY_INGEST_SECRET` | Authenticates to the Site's `/api/ingest` route. |
-| `NINETY_NINETY_SITES_TOKEN` | Required while the ChatGPT Site is owner-only; omit for a public Site. |
 
 Create these Actions variables:
 
@@ -46,6 +45,7 @@ The same `NINETY_NINETY_INGEST_SECRET` value must be stored as the Site's secret
 ## Operations
 
 - The schedule runs daily at 08:17 UTC and publishes after validation.
+- Merging a workflow or adapter change into `main` also publishes after validation.
 - A manual run defaults to dry-run mode. Enable the `publish` input to update production.
 - A full result smaller than the safety floor or larger than the Site's 2,000-record limit fails
   before any live write.
