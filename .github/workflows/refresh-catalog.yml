@@ -26,10 +26,10 @@ jobs:
     env:
       MDBLIST_API_KEY: ${{ secrets.MDBLIST_API_KEY }}
       MDBLIST_LIST_URL: ${{ vars.MDBLIST_LIST_URL }}
-      NINETY_NINETY_INGEST_URL: ${{ vars.NINETY_NINETY_INGEST_URL }}
+      NINETY_NINETY_INGEST_URL: https://the-90-90.chris186688.chatgpt.site/api/ingest
       NINETY_NINETY_INGEST_SECRET: ${{ secrets.NINETY_NINETY_INGEST_SECRET }}
       NINETY_NINETY_SITES_TOKEN: ${{ secrets.NINETY_NINETY_SITES_TOKEN }}
-      NINETY_NINETY_MIN_MOVIES: ${{ vars.NINETY_NINETY_MIN_MOVIES || '25' }}
+      NINETY_NINETY_MIN_MOVIES: "25"
       DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.publish != true }}
     steps:
       - name: Check out repository
