@@ -1,0 +1,44 @@
+name: Refresh 90/90 catalog
+
+on:
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the validated result to the live Site
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ninety-ninety-catalog-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Validate and refresh catalog
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MDBLIST_API_KEY: ${{ secrets.MDBLIST_API_KEY }}
+      MDBLIST_LIST_URL: ${{ vars.MDBLIST_LIST_URL }}
+      NINETY_NINETY_INGEST_URL: ${{ vars.NINETY_NINETY_INGEST_URL }}
+      NINETY_NINETY_INGEST_SECRET: ${{ secrets.NINETY_NINETY_INGEST_SECRET }}
+      NINETY_NINETY_SITES_TOKEN: ${{ secrets.NINETY_NINETY_SITES_TOKEN }}
+      NINETY_NINETY_MIN_MOVIES: ${{ vars.NINETY_NINETY_MIN_MOVIES || '25' }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.publish != true }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run catalog refresh
+        run: node scripts/ingest-mdblist.mjs
