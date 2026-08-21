@@ -1,6 +1,11 @@
 name: Refresh 90/90 catalog
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/refresh-catalog.yml"
+      - "scripts/ingest-mdblist.mjs"
   schedule:
     - cron: "17 8 * * *"
   workflow_dispatch:
@@ -28,7 +33,6 @@ jobs:
       MDBLIST_LIST_URL: ${{ vars.MDBLIST_LIST_URL }}
       NINETY_NINETY_INGEST_URL: https://the-90-90.chris186688.chatgpt.site/api/ingest
       NINETY_NINETY_INGEST_SECRET: ${{ secrets.NINETY_NINETY_INGEST_SECRET }}
-      NINETY_NINETY_SITES_TOKEN: ${{ secrets.NINETY_NINETY_SITES_TOKEN }}
       NINETY_NINETY_MIN_MOVIES: "25"
       DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.publish != true }}
     steps:
