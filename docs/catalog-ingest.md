@@ -29,7 +29,7 @@ Create these Actions secrets:
 | --- | --- |
 | `MDBLIST_API_KEY` | Reads the saved MDBList list and current ratings. |
 | `NINETY_NINETY_INGEST_SECRET` | Authenticates to the Site's `/api/ingest` route. |
-| `NINETY_NINETY_SITES_TOKEN` | Allows the Action to reach the owner-only ChatGPT Site. |
+| `NINETY_NINETY_SITES_TOKEN` | Required while the ChatGPT Site is owner-only; omit for a public Site. |
 
 Create these Actions variables:
 
