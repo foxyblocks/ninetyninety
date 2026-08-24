@@ -18,8 +18,9 @@ Use its API items URL as `MDBLIST_LIST_URL`:
 `https://api.mdblist.com/lists/<username>/<list-slug>/items`
 
 The adapter only sends the MDBList API key to `https://api.mdblist.com`. It accepts common list
-response shapes, hydrates list items through MDBList's TMDB movie endpoint, and uses TMDB IDs as the
-catalog's stable movie IDs.
+response shapes, requests ratings and metadata directly on list pages, and batch-hydrates any
+remaining ID-only items through MDBList's TMDB movie endpoint. TMDB IDs remain the catalog's stable
+movie IDs.
 
 ## GitHub configuration
 
@@ -49,7 +50,7 @@ The same `NINETY_NINETY_INGEST_SECRET` value must be stored as the Site's secret
 - A manual run defaults to dry-run mode. Enable the `publish` input to update production.
 - A full result smaller than the safety floor or larger than the Site's 2,000-record limit fails
   before any live write.
-- Provider requests retry rate limits and transient server failures. Any missing detail response
-  fails the full run instead of publishing a partial catalog.
+- Provider requests honor `Retry-After` when retrying rate limits and retry transient server
+  failures. Any missing detail response fails the full run instead of publishing a partial catalog.
 - A successful full reconciliation hides movies that no longer qualify but retains their score
   history in the Site database.

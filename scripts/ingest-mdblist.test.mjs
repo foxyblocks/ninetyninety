@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test"
 import {
   extractListItems,
   extractMovieRef,
+  fetchResponse,
   loadAllListItems,
+  loadQualifiedMovies,
   normalizeMdblistMovie,
   qualifies,
 } from "./ingest-mdblist.mjs"
@@ -61,6 +63,12 @@ describe("MDBList normalization", () => {
     )
   })
 
+  test("accepts release_year from list responses with appended ratings", () => {
+    expect(normalizeMdblistMovie({ ...godfather, year: undefined, release_year: 1972 })?.year).toBe(
+      1972
+    )
+  })
+
   test("loads every list page before reconciliation", async () => {
     const offsets = []
     const pages = [
@@ -84,5 +92,98 @@ describe("MDBList normalization", () => {
 
     expect(offsets).toEqual([0, 100])
     expect(items).toHaveLength(101)
+  })
+
+  test("prefers cursor pagination when MDBList returns a next cursor", async () => {
+    const requests = []
+    const pages = [
+      { movies: [{ id: 1 }], pagination: { next_cursor: "next-page" } },
+      { movies: [{ id: 2 }], pagination: {} },
+    ]
+
+    const items = await loadAllListItems(
+      "https://api.mdblist.com/lists/example/the-90-90/items",
+      "test-key",
+      async (url) => {
+        requests.push(new URL(url))
+        return new Response(JSON.stringify(pages.shift()), {
+          headers: requests.length === 1 ? {} : { "X-Has-More": "false" },
+        })
+      }
+    )
+
+    expect(requests[0].searchParams.get("append_to_response")).toBe(
+      "genres,poster,description,ratings"
+    )
+    expect(requests[1].searchParams.get("cursor")).toBe("next-page")
+    expect(requests[1].searchParams.has("offset")).toBe(false)
+    expect(items).toHaveLength(2)
+  })
+})
+
+describe("MDBList request handling", () => {
+  test("hydrates unresolved list items through the batch endpoint", async () => {
+    const originalFetch = globalThis.fetch
+    const requests = []
+
+    globalThis.fetch = async (input, options = {}) => {
+      const url = new URL(input)
+      requests.push({ url, options })
+
+      if (url.pathname === "/lists/example/the-90-90/items") {
+        return new Response(JSON.stringify({ movies: [{ ids: { tmdb: 238 } }] }), {
+          headers: { "X-Has-More": "false" },
+        })
+      }
+      if (url.pathname === "/tmdb/movie/" && options.method === "POST") {
+        return new Response(JSON.stringify([godfather]))
+      }
+
+      return new Response("rate limited", {
+        status: 429,
+        headers: { "Retry-After": "0" },
+      })
+    }
+
+    try {
+      await expect(
+        loadQualifiedMovies(
+          "https://api.mdblist.com/lists/example/the-90-90/items",
+          "test-key"
+        )
+      ).resolves.toEqual([expect.objectContaining({ id: "tmdb:238" })])
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+
+    expect(requests).toHaveLength(2)
+    expect(requests[1].url.pathname).toBe("/tmdb/movie/")
+    expect(JSON.parse(requests[1].options.body)).toEqual({ ids: [238] })
+  })
+
+  test("honors Retry-After before retrying a rate-limited request", async () => {
+    const originalFetch = globalThis.fetch
+    let attempts = 0
+
+    globalThis.fetch = async () => {
+      attempts += 1
+      if (attempts === 1) {
+        return new Response("rate limited", {
+          status: 429,
+          headers: { "Retry-After": "1" },
+        })
+      }
+      return new Response("{}")
+    }
+
+    const startedAt = Date.now()
+    try {
+      await fetchResponse("https://api.mdblist.com/test")
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+
+    expect(attempts).toBe(2)
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(900)
   })
 })

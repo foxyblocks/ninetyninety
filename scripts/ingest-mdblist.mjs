@@ -5,6 +5,7 @@ const RT_HOST = "www.rottentomatoes.com"
 const MAX_MOVIES = 2000
 const MDBLIST_PAGE_SIZE = 100
 const MAX_LIST_PAGES = 25
+const MAX_RETRY_DELAY_MS = 60_000
 
 function asRecord(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : null
@@ -100,7 +101,7 @@ export function normalizeMdblistMovie(value) {
 
   const tmdbId = getTmdbId(movie)
   const title = firstString(movie.title, movie.name)
-  const year = firstNumber(movie.year, asString(movie.released)?.slice(0, 4))
+  const year = firstNumber(movie.year, movie.release_year, asString(movie.released)?.slice(0, 4))
   const criticsRating = getRating(movie, ["tomatoes", "tomato"])
   const audienceRating = getRating(movie, ["popcorn", "tomatoesaudience"])
   const critics = ratingScore(criticsRating)
@@ -187,7 +188,7 @@ function mdblistUrl(rawUrl, apiKey) {
   return url
 }
 
-async function fetchResponse(url, options = {}) {
+export async function fetchResponse(url, options = {}) {
   const attempts = 4
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     let response
@@ -212,7 +213,26 @@ async function fetchResponse(url, options = {}) {
     if (!retryable || attempt === attempts) {
       throw new Error(`Request failed (${response.status}) for ${new URL(url).hostname}`)
     }
-    await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** (attempt - 1)))
+
+    const retryAfter = response.headers.get("retry-after")
+    let retryDelay = 500 * 2 ** (attempt - 1)
+    if (retryAfter) {
+      const delaySeconds = Number(retryAfter)
+      const retryAt = Date.parse(retryAfter)
+      if (Number.isFinite(delaySeconds) && delaySeconds >= 0) {
+        retryDelay = delaySeconds * 1000
+      } else if (Number.isFinite(retryAt)) {
+        retryDelay = Math.max(0, retryAt - Date.now())
+      }
+    }
+    if (retryDelay > MAX_RETRY_DELAY_MS) {
+      throw new Error(
+        `Request rate limited for ${new URL(url).hostname}; retry requested after ${Math.ceil(
+          retryDelay / 1000
+        )} seconds`
+      )
+    }
+    await new Promise((resolve) => setTimeout(resolve, retryDelay))
   }
   throw new Error("Request failed after retries")
 }
@@ -224,14 +244,18 @@ async function fetchJson(url, options = {}) {
 export async function loadAllListItems(listUrl, apiKey, fetchPage = fetchResponse) {
   const allItems = []
   let offset = 0
+  let cursor = null
 
   for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
     const pageUrl = mdblistUrl(listUrl, apiKey)
     pageUrl.searchParams.set("limit", String(MDBLIST_PAGE_SIZE))
-    pageUrl.searchParams.set("offset", String(offset))
+    pageUrl.searchParams.set("append_to_response", "genres,poster,description,ratings")
+    if (cursor) pageUrl.searchParams.set("cursor", cursor)
+    else pageUrl.searchParams.set("offset", String(offset))
 
     const response = await fetchPage(pageUrl)
-    const items = extractListItems(await response.json())
+    const payload = await response.json()
+    const items = extractListItems(payload)
     const hasMoreHeader = response.headers.get("x-has-more")?.toLowerCase()
     if (page === 0 && items.length === 0) {
       throw new Error("MDBList returned an empty or unrecognized list response")
@@ -246,6 +270,10 @@ export async function loadAllListItems(listUrl, apiKey, fetchPage = fetchRespons
     allItems.push(...items)
     offset += items.length
 
+    const pagination = asRecord(asRecord(payload)?.pagination)
+    cursor = firstString(asRecord(payload)?.next_cursor, pagination?.next_cursor)
+
+    if (cursor) continue
     if (hasMoreHeader === "false") return allItems
     if (hasMoreHeader !== "true" && items.length < MDBLIST_PAGE_SIZE) return allItems
   }
@@ -253,21 +281,31 @@ export async function loadAllListItems(listUrl, apiKey, fetchPage = fetchRespons
   throw new Error(`MDBList list exceeded the ${MAX_LIST_PAGES}-page safety limit`)
 }
 
-async function mapWithConcurrency(values, concurrency, mapper) {
-  const results = new Array(values.length)
-  let cursor = 0
-  async function worker() {
-    while (cursor < values.length) {
-      const index = cursor
-      cursor += 1
-      results[index] = await mapper(values[index], index)
-    }
+async function loadMovieDetails(refs, apiKey) {
+  if (refs.length === 0) return []
+
+  // MDBList exposes a batch companion to the single-title endpoint. One batch avoids
+  // turning a catalog refresh into a burst of parallel requests against the provider.
+  const detailUrl = mdblistUrl(`https://${MDBLIST_API_HOST}/tmdb/movie/`, apiKey)
+  const payload = await fetchJson(detailUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ids: refs.map(({ tmdbId }) => Number(tmdbId)) }),
+  })
+  if (!Array.isArray(payload)) {
+    throw new Error("MDBList returned an unrecognized batch detail response")
   }
-  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, () => worker()))
-  return results
+
+  const movies = payload.map(normalizeMdblistMovie).filter(Boolean)
+  if (movies.length !== refs.length) {
+    throw new Error(
+      `MDBList returned ${movies.length} complete details for ${refs.length} requested movies`
+    )
+  }
+  return movies
 }
 
-async function loadQualifiedMovies(listUrl, apiKey) {
+export async function loadQualifiedMovies(listUrl, apiKey) {
   const items = await loadAllListItems(listUrl, apiKey)
 
   const direct = []
@@ -287,13 +325,7 @@ async function loadQualifiedMovies(listUrl, apiKey) {
   }
 
   const uniqueRefs = [...new Map(refs.map((ref) => [ref.tmdbId, ref])).values()]
-  const hydrated = await mapWithConcurrency(uniqueRefs, 5, async ({ tmdbId }) => {
-    const detailUrl = mdblistUrl(`https://${MDBLIST_API_HOST}/tmdb/movie/${tmdbId}`, apiKey)
-    const detail = await fetchJson(detailUrl)
-    const movie = normalizeMdblistMovie(detail)
-    if (!movie) throw new Error(`Incomplete MDBList detail response for TMDB ${tmdbId}`)
-    return movie
-  })
+  const hydrated = await loadMovieDetails(uniqueRefs, apiKey)
 
   const deduplicated = [
     ...new Map([...direct, ...hydrated].map((movie) => [movie.id, movie])).values(),
