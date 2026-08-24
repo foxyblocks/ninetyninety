@@ -6,6 +6,7 @@
     "dev": "PORT=3009 next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "prepare": "simple-git-hooks",
     "check": "biome check .",
     "check:fix": "biome check . --write",
     "format": "biome format . --write",
@@ -36,10 +37,18 @@
     "@types/node": "^20.17.50",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
+    "lint-staged": "^17.3.0",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.8.3"
   },
   "overrides": {
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "bunx lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,json,jsonc,css}": "biome check --write --no-errors-on-unmatched"
   }
 }

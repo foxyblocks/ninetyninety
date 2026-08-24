@@ -147,10 +147,7 @@ describe("MDBList request handling", () => {
 
     try {
       await expect(
-        loadQualifiedMovies(
-          "https://api.mdblist.com/lists/example/the-90-90/items",
-          "test-key"
-        )
+        loadQualifiedMovies("https://api.mdblist.com/lists/example/the-90-90/items", "test-key")
       ).resolves.toEqual([expect.objectContaining({ id: "tmdb:238" })])
     } finally {
       globalThis.fetch = originalFetch
