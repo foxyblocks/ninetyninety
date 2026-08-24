@@ -18,9 +18,9 @@ Use its API items URL as `MDBLIST_LIST_URL`:
 `https://api.mdblist.com/lists/<username>/<list-slug>/items`
 
 The adapter only sends the MDBList API key to `https://api.mdblist.com`. It accepts common list
-response shapes, requests ratings and metadata directly on list pages, and batch-hydrates any
-remaining ID-only items through MDBList's TMDB movie endpoint. TMDB IDs remain the catalog's stable
-movie IDs.
+response shapes, requests ratings and metadata directly on list pages, and hydrates any remaining
+ID-only items through bounded batches on MDBList's TMDB movie endpoint. TMDB IDs remain the
+catalog's stable movie IDs.
 
 ## GitHub configuration
 

@@ -4,6 +4,7 @@ const MDBLIST_API_HOST = "api.mdblist.com"
 const RT_HOST = "www.rottentomatoes.com"
 const MAX_MOVIES = 2000
 const MDBLIST_PAGE_SIZE = 100
+const MDBLIST_BATCH_SIZE = 100
 const MAX_LIST_PAGES = 25
 const MAX_RETRY_DELAY_MS = 60_000
 
@@ -284,24 +285,57 @@ export async function loadAllListItems(listUrl, apiKey, fetchPage = fetchRespons
 async function loadMovieDetails(refs, apiKey) {
   if (refs.length === 0) return []
 
-  // MDBList exposes a batch companion to the single-title endpoint. One batch avoids
-  // turning a catalog refresh into a burst of parallel requests against the provider.
+  // MDBList exposes a batch companion to the single-title endpoint. Small sequential
+  // batches avoid both the endpoint's response cap and a burst of parallel requests.
   const detailUrl = mdblistUrl(`https://${MDBLIST_API_HOST}/tmdb/movie/`, apiKey)
-  const payload = await fetchJson(detailUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ids: refs.map(({ tmdbId }) => Number(tmdbId)) }),
-  })
-  if (!Array.isArray(payload)) {
-    throw new Error("MDBList returned an unrecognized batch detail response")
+  const movies = []
+
+  for (let start = 0; start < refs.length; start += MDBLIST_BATCH_SIZE) {
+    const batch = refs.slice(start, start + MDBLIST_BATCH_SIZE)
+    const payload = await fetchJson(detailUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ids: batch.map(({ tmdbId }) => Number(tmdbId)) }),
+    })
+    if (!Array.isArray(payload)) {
+      throw new Error("MDBList returned an unrecognized batch detail response")
+    }
+
+    const detailsById = new Map(
+      payload
+        .map((detail) => {
+          const record = asRecord(detail)
+          const tmdbId = record ? getTmdbId(record) : null
+          return tmdbId ? [tmdbId, record] : null
+        })
+        .filter(Boolean)
+    )
+    const missing = batch.filter(({ tmdbId }) => !detailsById.has(tmdbId))
+    if (missing.length > 0) {
+      throw new Error(
+        `MDBList omitted ${missing.length} of ${batch.length} requested movie details`
+      )
+    }
+
+    for (const { tmdbId } of batch) {
+      const detail = detailsById.get(tmdbId)
+      const title = firstString(detail.title, detail.name)
+      const year = firstNumber(
+        detail.year,
+        detail.release_year,
+        asString(detail.released)?.slice(0, 4)
+      )
+      if (!title || !Number.isInteger(year)) {
+        throw new Error(`Incomplete MDBList detail response for TMDB ${tmdbId}`)
+      }
+
+      // A complete provider record can legitimately lack one of the required scores.
+      // That movie no longer qualifies, so omit it instead of aborting reconciliation.
+      const movie = normalizeMdblistMovie(detail)
+      if (movie) movies.push(movie)
+    }
   }
 
-  const movies = payload.map(normalizeMdblistMovie).filter(Boolean)
-  if (movies.length !== refs.length) {
-    throw new Error(
-      `MDBList returned ${movies.length} complete details for ${refs.length} requested movies`
-    )
-  }
   return movies
 }
 

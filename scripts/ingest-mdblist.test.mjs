@@ -158,6 +158,103 @@ describe("MDBList request handling", () => {
     expect(JSON.parse(requests[1].options.body)).toEqual({ ids: [238] })
   })
 
+  test("hydrates large lists through bounded sequential batches", async () => {
+    const originalFetch = globalThis.fetch
+    const batches = []
+    const refs = Array.from({ length: 205 }, (_, index) => ({
+      ids: { tmdb: index + 1 },
+    }))
+
+    globalThis.fetch = async (input, options = {}) => {
+      const url = new URL(input)
+      if (url.pathname === "/lists/example/the-90-90/items") {
+        return new Response(JSON.stringify({ movies: refs }), {
+          headers: { "X-Has-More": "false" },
+        })
+      }
+      if (url.pathname === "/tmdb/movie/" && options.method === "POST") {
+        const { ids } = JSON.parse(options.body)
+        batches.push(ids)
+        return new Response(
+          JSON.stringify(
+            ids.map((tmdbId) => ({
+              ...godfather,
+              ids: { tmdb: tmdbId },
+              title: `Movie ${tmdbId}`,
+            }))
+          )
+        )
+      }
+
+      return new Response("unexpected request", { status: 500 })
+    }
+
+    try {
+      await expect(
+        loadQualifiedMovies("https://api.mdblist.com/lists/example/the-90-90/items", "test-key")
+      ).resolves.toHaveLength(205)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+
+    expect(batches.map((batch) => batch.length)).toEqual([100, 100, 5])
+  })
+
+  test("omits complete movie details that no longer include both scores", async () => {
+    const originalFetch = globalThis.fetch
+
+    globalThis.fetch = async (input, options = {}) => {
+      const url = new URL(input)
+      if (url.pathname === "/lists/example/the-90-90/items") {
+        return new Response(JSON.stringify({ movies: [{ ids: { tmdb: 238 } }] }), {
+          headers: { "X-Has-More": "false" },
+        })
+      }
+      if (url.pathname === "/tmdb/movie/" && options.method === "POST") {
+        return new Response(
+          JSON.stringify([{ ...godfather, ratings: godfather.ratings.slice(0, 1) }])
+        )
+      }
+
+      return new Response("unexpected request", { status: 500 })
+    }
+
+    try {
+      await expect(
+        loadQualifiedMovies("https://api.mdblist.com/lists/example/the-90-90/items", "test-key")
+      ).resolves.toEqual([])
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  test("fails reconciliation when a batch omits a requested movie", async () => {
+    const originalFetch = globalThis.fetch
+
+    globalThis.fetch = async (input, options = {}) => {
+      const url = new URL(input)
+      if (url.pathname === "/lists/example/the-90-90/items") {
+        return new Response(
+          JSON.stringify({ movies: [{ ids: { tmdb: 238 } }, { ids: { tmdb: 424 } }] }),
+          { headers: { "X-Has-More": "false" } }
+        )
+      }
+      if (url.pathname === "/tmdb/movie/" && options.method === "POST") {
+        return new Response(JSON.stringify([godfather]))
+      }
+
+      return new Response("unexpected request", { status: 500 })
+    }
+
+    try {
+      await expect(
+        loadQualifiedMovies("https://api.mdblist.com/lists/example/the-90-90/items", "test-key")
+      ).rejects.toThrow("MDBList omitted 1 of 2 requested movie details")
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
   test("honors Retry-After before retrying a rate-limited request", async () => {
     const originalFetch = globalThis.fetch
     let attempts = 0
