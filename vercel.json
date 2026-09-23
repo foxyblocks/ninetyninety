@@ -1,5 +1,12 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "bun run build",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/refresh-catalog",
+      "schedule": "17 8 * * *"
+    }
+  ]
 }

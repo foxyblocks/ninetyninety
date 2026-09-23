@@ -1,9 +1,8 @@
 # Catalog ingest
 
-The scheduled workflow treats an MDBList dynamic movie list as the discovery source, rechecks every
-movie's current `tomatoes` and `popcorn` ratings, and sends one authenticated full reconciliation to
-the ChatGPT Site. The Site remains the source of truth for eligibility and enforces the same strict
-rule: both scores must be greater than 90.
+The production refresh runs as a daily Vercel Cron job. It treats an MDBList dynamic movie list as
+the discovery source, rechecks every movie's current `tomatoes` and `popcorn` ratings, and commits
+one complete reconciliation to Neon Postgres. Both scores must be strictly greater than 90.
 
 ## MDBList source
 
@@ -22,35 +21,26 @@ response shapes, requests ratings and metadata directly on list pages, and hydra
 ID-only items through bounded batches on MDBList's TMDB movie endpoint. TMDB IDs remain the
 catalog's stable movie IDs.
 
-## GitHub configuration
+## Vercel configuration
 
-Create these Actions secrets:
+Configure these environment variables in the Vercel project:
 
-| Secret | Purpose |
+| Variable | Purpose |
 | --- | --- |
 | `MDBLIST_API_KEY` | Reads the saved MDBList list and current ratings. |
-| `NINETY_NINETY_INGEST_SECRET` | Authenticates to the Site's `/api/ingest` route. |
-
-Create these Actions variables:
-
-| Variable | Value |
-| --- | --- |
-| `MDBLIST_LIST_URL` | The MDBList API items URL above. |
-
-The Site ingest URL and the 25-movie safety floor are committed in the workflow because they are
-non-secret application configuration.
-
-The same `NINETY_NINETY_INGEST_SECRET` value must be stored as the Site's secret runtime variable
-`INGEST_SECRET`.
+| `MDBLIST_LIST_URL` | MDBList API items URL. |
+| `DATABASE_URL` | Neon pooled Postgres connection string. |
+| `CRON_SECRET` | Authenticates Vercel's request to the cron route. |
+| `NINETY_NINETY_MIN_MOVIES` | Safety floor; defaults to 25. |
 
 ## Operations
 
-- The schedule runs daily at 08:17 UTC and publishes after validation.
-- Merging a workflow or adapter change into `main` also publishes after validation.
-- A manual run defaults to dry-run mode. Enable the `publish` input to update production.
-- A full result smaller than the safety floor or larger than the Site's 2,000-record limit fails
+- Vercel invokes `GET /api/cron/refresh-catalog` daily at 08:17 UTC.
+- GitHub Actions retains a manual dry-run workflow for validating the MDBList adapter.
+- Add `?force=true` to an authenticated manual cron request to run more than once in one UTC day.
+- A full result smaller than the safety floor or larger than the 2,000-record limit fails
   before any live write.
 - Provider requests honor `Retry-After` when retrying rate limits and retry transient server
   failures. Any missing detail response fails the full run instead of publishing a partial catalog.
-- A successful full reconciliation hides movies that no longer qualify but retains their score
-  history in the Site database.
+- A successful reconciliation marks movies that no longer qualify inactive while retaining score
+  history. Database changes are atomic and repeat-safe.

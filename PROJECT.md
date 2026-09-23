@@ -1,5 +1,7 @@
 # NinetyNinety - Elite Movie Discovery Platform
 
+> `ARCHITECTURE.md` is the source of truth for the current runtime, database, and catalog-refresh design. This file describes the broader product vision and includes ideas that are not implemented yet.
+
 ## Project Overview
 
 **NinetyNinety** is a curated movie discovery platform that showcases only the absolute best films - those with both 90%+ critics score AND 90%+ audience score on Rotten Tomatoes. This creates an exclusive collection of universally acclaimed movies that satisfy both professional critics and general audiences.
@@ -54,15 +56,13 @@
 - **NO TAILWIND CSS**: We exclusively use Chakra UI for all styling and components
 
 **Backend & Database**
-- **Supabase**: 
-  - PostgreSQL database for movie data storage
-  - Authentication (for future user features)
-  - Edge Functions for serverless compute
-  - Storage for movie images/assets
+- **Vercel Functions and Cron** for application APIs and the daily catalog refresh
+- **Neon Postgres** for movie data, score history, and ingest-run history
+- **Drizzle ORM** for schema definitions and versioned migrations
 
 **Data Processing**
-- **Background Jobs**: Supabase Edge Functions or Vercel Cron
-- **Rate Limiting**: Redis for job queuing and rate limit management
+- **Background Jobs**: Vercel Cron and a shared TypeScript catalog module
+- **Rate Limiting**: Provider-aware bounded batches and retry handling
 - **Data Sources**: 
   - TMDB API for base movie data
   - Rotten Tomatoes scraping (rate-limited)
@@ -348,4 +348,4 @@ const RT_RATE_LIMIT = {
 
 ---
 
-*This document will be updated as the project evolves and new requirements emerge.* 
+*This document will be updated as the project evolves and new requirements emerge.*
