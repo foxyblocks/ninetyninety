@@ -8,7 +8,7 @@ A curated movie discovery platform showcasing only the absolute best films - tho
 
 - **Frontend**: Next.js 14+ with App Router
 - **UI Library**: Chakra UI v3 (NO Tailwind CSS)
-- **Database**: Supabase (PostgreSQL)
+- **Database**: Neon Postgres with Drizzle ORM
 - **Language**: TypeScript
 - **Package Manager**: Bun
 - **Code Quality**: Biome
@@ -18,8 +18,8 @@ A curated movie discovery platform showcasing only the absolute best films - tho
 
 - [Bun](https://bun.sh/) installed
 - [Node.js](https://nodejs.org/) 18.17 or later
-- Supabase account (for database)
-- TMDB API key (for movie data)
+- Vercel account with the Neon Marketplace integration
+- MDBList API key
 
 ## 🛠️ Getting Started
 
@@ -36,16 +36,17 @@ A curated movie discovery platform showcasing only the absolute best films - tho
 
 3. **Set up environment variables**
    ```bash
-   cp .env.example .env.local
+   vercel env pull .env.development.local --environment=development
    ```
    Then edit `.env.local` with your actual values.
 
 4. **Run the development server**
    ```bash
-   bun dev
+   bun run db:migrate
+   bun run dev
    ```
 
-   Open [http://localhost:3000](http://localhost:3000) with your browser.
+   Open [http://localhost:3009](http://localhost:3009) with your browser.
 
 ## 📝 Available Scripts
 
@@ -61,6 +62,9 @@ A curated movie discovery platform showcasing only the absolute best films - tho
 - `bun test:e2e` - Run E2E tests
 - `bun test:e2e:ui` - Run E2E tests with UI
 - `bun test:e2e:debug` - Debug E2E tests
+- `bun run db:generate` - Generate a migration from the Drizzle schema
+- `bun run db:migrate` - Apply pending migrations
+- `bun run db:studio` - Open Drizzle Studio
 
 ## 🏗️ Project Structure
 
@@ -73,14 +77,15 @@ ninetyninety/
 │   │   ├── layout.tsx    # Root layout with Chakra UI
 │   │   └── page.tsx      # Home page
 │   ├── components/       # React components
-│   ├── lib/              # Utility functions and configurations
-│   └── types/            # TypeScript type definitions
+│   ├── catalog/          # Provider, refresh, and reconciliation logic
+│   └── db/               # Neon connection and Drizzle schema
+├── drizzle/              # Versioned database migrations
 ├── tests/
 │   ├── unit/             # Unit tests
 │   └── e2e/              # End-to-end tests
 ├── public/               # Static assets
-├── PROJECT.md            # Detailed project documentation
-├── CLAUDE.md             # AI assistant guidelines
+├── ARCHITECTURE.md       # Current system design and cutover plan
+├── PROJECT.md            # Product vision and backlog
 └── biome.json            # Biome configuration
 ```
 
@@ -111,7 +116,7 @@ PORT=3002 bun test:e2e
 ## 📚 Documentation
 
 - [PROJECT.md](./PROJECT.md) - Detailed project specifications
-- [CLAUDE.md](./CLAUDE.md) - AI assistant development guidelines
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Runtime and data architecture
 
 ## 🤝 Contributing
 

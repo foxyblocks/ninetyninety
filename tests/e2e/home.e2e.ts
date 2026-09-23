@@ -8,11 +8,11 @@ test.describe("Home Page", () => {
     await expect(page).toHaveTitle(/NinetyNinety/)
 
     // Check for the main heading
-    const heading = page.getByRole("heading", { name: "NinetyNinety" })
+    const heading = page.getByRole("heading", { name: "Loved by both sides." })
     await expect(heading).toBeVisible()
 
     // Check for the tagline
-    const tagline = page.getByText("Discover the absolute best films")
+    const tagline = page.getByText(/qualifying films|catalog is warming up/i).first()
     await expect(tagline).toBeVisible()
   })
 
@@ -20,10 +20,10 @@ test.describe("Home Page", () => {
     // Test desktop view
     await page.setViewportSize({ width: 1200, height: 800 })
     await page.goto("/")
-    await expect(page.getByRole("heading", { name: "NinetyNinety" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Loved by both sides." })).toBeVisible()
 
     // Test mobile view
     await page.setViewportSize({ width: 375, height: 667 })
-    await expect(page.getByRole("heading", { name: "NinetyNinety" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Loved by both sides." })).toBeVisible()
   })
 })

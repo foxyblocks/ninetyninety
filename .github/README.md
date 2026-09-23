@@ -14,6 +14,11 @@ Runs on every push to `main` and on all pull requests.
 - **E2E Tests**: Runs Playwright E2E tests
 - **TypeScript Check**: Validates TypeScript types
 
+### Catalog Source Validation (`refresh-catalog.yml`)
+
+Runs manually when the MDBList adapter needs to be checked against live provider data. Production
+refreshes are scheduled by Vercel Cron and write directly to Neon.
+
 ## Vercel Deployment Options
 
 Vercel automatically deploys your project by default. You have two options:
@@ -68,46 +73,23 @@ The E2E tests use Playwright's built-in `webServer` configuration to automatical
 - CI runs tests with a single worker to ensure stability
 - The server is always restarted in CI (no reuse of existing servers)
 
-## Required Secrets
+## Required GitHub Configuration
 
 Configure these secrets in your GitHub repository settings:
 
-### Application Secrets (Optional)
-These are optional - the CI will use placeholder values if not set:
-- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (keep secret!)
-- `TMDB_API_KEY`: Your TMDB API key for movie data
+The CI workflow does not need production application secrets. The manual catalog validator uses:
 
-## How Environment Variables Work in CI
+- Secret `MDBLIST_API_KEY`
+- Variable `MDBLIST_LIST_URL`
 
-GitHub Actions automatically exposes secrets as environment variables. We don't need to create `.env.local` files because:
-
-1. **GitHub Secrets → Environment Variables**: When you use `${{ secrets.SECRET_NAME }}`, it becomes available as an environment variable
-2. **Direct Usage**: Next.js can read these directly from the environment during build and runtime
-3. **Fallback Values**: We use `|| 'placeholder'` syntax to provide defaults when secrets aren't configured yet
-
-Example in our CI:
-```yaml
-- name: Build application
-  run: bun run build
-  env:
-    NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-```
-
-This approach is:
-- **Cleaner**: No temporary files to manage
-- **More Secure**: Secrets stay in environment variables
-- **Standard Practice**: Following GitHub Actions conventions
+Production database and cron secrets live in Vercel, not GitHub.
 
 ## Setting Up Secrets
 
 1. Go to your repository on GitHub
 2. Navigate to Settings → Secrets and variables → Actions
 3. Click "New repository secret"
-4. Add each secret listed above
-
-Note: All secrets are optional. The CI will run with placeholder values if secrets aren't configured yet.
+4. Add `MDBLIST_API_KEY` if the manual catalog validator should be available
 
 ## Workflow Status Badge
 
@@ -142,4 +124,4 @@ act -W .github/workflows/ci.yml --secret-file .env.local
 ### Deployment Failures
 - Verify Vercel tokens are correct
 - Check Vercel dashboard for deployment logs
-- Ensure environment variables are set in Vercel project settings 
+- Ensure environment variables are set in Vercel project settings

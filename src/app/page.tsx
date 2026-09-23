@@ -1,26 +1,25 @@
-"use client"
+import { getActiveMovies, getLatestSuccessfulRefresh } from "@/catalog/repository"
+import type { DisplayMovie } from "@/catalog/types"
+import { MovieExplorer } from "@/components/movie-explorer"
 
-import { Box, Container, Heading, Text, VStack } from "@chakra-ui/react"
+export const dynamic = "force-dynamic"
 
-export default function Home() {
-  return (
-    <Container maxW="container.xl" py={8}>
-      <VStack gap={8} align="center">
-        <Box textAlign="center">
-          <Heading as="h1" size="3xl" mb={4}>
-            NinetyNinety
-          </Heading>
-          <Text fontSize="xl" color="gray.600">
-            Discover the absolute best films with both 90%+ critics and audience scores
-          </Text>
-        </Box>
+export default async function Home() {
+  let movies: DisplayMovie[] = []
+  let refreshedAt: string | undefined
 
-        <Box textAlign="center" pt={8}>
-          <Text fontSize="lg" color="gray.500">
-            Coming soon...
-          </Text>
-        </Box>
-      </VStack>
-    </Container>
-  )
+  try {
+    const [catalog, latestRefresh] = await Promise.all([
+      getActiveMovies(),
+      getLatestSuccessfulRefresh(),
+    ])
+    movies = catalog
+    refreshedAt = latestRefresh?.completed_at
+      ? new Date(latestRefresh.completed_at).toISOString()
+      : undefined
+  } catch (error) {
+    console.error("Unable to load the movie catalog", error)
+  }
+
+  return <MovieExplorer initialMovies={movies} refreshedAt={refreshedAt} />
 }
